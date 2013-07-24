@@ -82,6 +82,7 @@ static const char version[] =
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/acpi.h>
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -2467,6 +2468,14 @@ static struct dev_pm_ops smc_drv_pm_ops = {
 	.resume		= smc_drv_resume,
 };
 
+#ifdef CONFIG_ACPI
+static const struct acpi_device_id smc91x_acpi_match[] = {
+	{ "LNRO0003", },
+	{ }
+};
+MODULE_DEVICE_TABLE(acpi, smc91x_acpi_match);
+#endif
+
 static struct platform_driver smc_driver = {
 	.probe		= smc_drv_probe,
 	.remove		= smc_drv_remove,
@@ -2474,6 +2483,7 @@ static struct platform_driver smc_driver = {
 		.name	= CARDNAME,
 		.pm	= &smc_drv_pm_ops,
 		.of_match_table = of_match_ptr(smc91x_match),
+		.acpi_match_table = ACPI_PTR(smc91x_acpi_match),
 	},
 };
 
