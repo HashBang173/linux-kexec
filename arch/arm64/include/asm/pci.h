@@ -24,6 +24,12 @@
  */
 #define PCI_DMA_BUS_IS_PHYS	(0)
 
+static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+{
+	/* no legacy IRQ on arm64 */
+	return -ENODEV;
+}
+
 extern int isa_dma_bridge_buggy;
 
 #ifdef CONFIG_PCI
