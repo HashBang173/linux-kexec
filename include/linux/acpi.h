@@ -557,6 +557,20 @@ static inline int acpi_device_modalias(struct device *dev,
 
 #endif	/* !CONFIG_ACPI */
 
+#if defined(CONFIG_ACPI) && defined(CONFIG_ARM64)
+static inline void acpi_irq_init(void)
+{
+	/*
+	 * Hardcode ACPI IRQ chip initialization to GICv2 for now.
+	 * Proper irqchip infrastructure will be implemented along with
+	 * incoming  GICv2m|GICv3|ITS bits.
+	 */
+	acpi_gic_init();
+}
+#else
+static inline void acpi_irq_init(void) { }
+#endif
+
 #ifdef CONFIG_ACPI
 void acpi_os_set_prepare_sleep(int (*func)(u8 sleep_state,
 			       u32 pm1a_ctrl,  u32 pm1b_ctrl));
