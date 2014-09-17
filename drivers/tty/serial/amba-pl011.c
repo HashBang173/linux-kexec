@@ -79,6 +79,7 @@ struct vendor_data {
 	bool			dma_threshold;
 	bool			cts_event_workaround;
 	bool			always_enabled;
+	char			*fixed_options;
 
 	unsigned int (*get_fifosize)(struct amba_device *dev);
 };
@@ -96,6 +97,7 @@ static struct vendor_data vendor_arm = {
 	.dma_threshold		= false,
 	.cts_event_workaround	= false,
 	.always_enabled		= false,
+	.fixed_options		= NULL,
 	.get_fifosize		= get_fifosize_arm,
 };
 
@@ -112,6 +114,7 @@ static struct vendor_data vendor_st = {
 	.dma_threshold		= true,
 	.cts_event_workaround	= true,
 	.always_enabled		= false,
+	.fixed_options		= NULL,
 	.get_fifosize		= get_fifosize_st,
 };
 
@@ -2108,6 +2111,9 @@ static int __init pl011_console_setup(struct console *co, char *options)
 	}
 
 	uap->port.uartclk = clk_get_rate(uap->clk);
+
+	if (!options && uap->vendor->fixed_options)
+		options = uap->vendor->fixed_options;
 
 	if (options)
 		uart_parse_options(options, &baud, &parity, &bits, &flow);
