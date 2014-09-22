@@ -1157,6 +1157,11 @@ el1_sync:					// Guest trapped into EL2
 	mrs	x0, vbar_el2
 	b	2f
 
+1:	cmp	x10, #HVC_SET_VECTORS
+	b.ne	1f
+	msr	vbar_el2, x0
+	b	2f
+
 1:	cmp	x10, #HVC_KVM_CALL_HYP
 	b.ne	1f
 
