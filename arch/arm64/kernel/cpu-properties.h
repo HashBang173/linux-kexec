@@ -28,6 +28,7 @@ enum cpu_enable_method {
 struct cpu_properties {
 	u64 hwid;
 	u64 cpu_release_addr;
+	u64 cpu_return_addr;
 	const char *enable_method;
 	enum cpu_enable_method type;
 };

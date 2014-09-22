@@ -15,6 +15,7 @@ int read_cpu_properties(struct cpu_properties *p, const struct device_node *dn)
 	memset(p, 0, sizeof(*p));
 	p->hwid = INVALID_HWID;
 	p->cpu_release_addr = INVALID_ADDR;
+	p->cpu_return_addr = INVALID_ADDR;
 
 	cell = of_get_property(dn, "reg", NULL);
 
@@ -51,6 +52,12 @@ int read_cpu_properties(struct cpu_properties *p, const struct device_node *dn)
 				 &p->cpu_release_addr)) {
 		pr_err("%s: Error: %s: invalid cpu-return-addr property\n",
 		       __func__, dn->full_name);
+		return -1;
+	}
+
+	if (of_property_read_u64(dn, "cpu-return-addr", &p->cpu_return_addr)) {
+		pr_err("%s: Error: %s: invalid cpu-return-addr property\n",
+			__func__, dn->full_name);
 		return -1;
 	}
 

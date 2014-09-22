@@ -295,10 +295,11 @@ static int kexec_cpu_info_init(const struct device_node *dn,
 				cp->enable_method);
 		else
 			pr_devel("%s:%d: cpu-%u: hwid-%llx, '%s', "
-				"cpu-release-addr %llx\n",
+				"cpu-release-addr %llx, cpu-return-addr %llx\n",
 				__func__, __LINE__, cpu, cp->hwid,
 				cp->enable_method,
-				cp->cpu_release_addr);
+				cp->cpu_release_addr,
+				cp->cpu_return_addr);
 	}
 
 	return 0;
@@ -390,6 +391,15 @@ static bool kexec_cpu_check(struct cpu_properties *cp_1,
 				__func__, __LINE__, cp_1->hwid,
 				cp_1->cpu_release_addr,
 				cp_2->cpu_release_addr);
+			return false;
+		}
+
+		if (cp_1->cpu_return_addr != cp_2->cpu_return_addr) {
+			pr_err("%s:%d: hwid-%llx: Error: "
+				"cpu-return-addr mismatch %llx != %llx.\n",
+				__func__, __LINE__, cp_1->hwid,
+				cp_1->cpu_return_addr,
+				cp_2->cpu_return_addr);
 			return false;
 		}
 	}
