@@ -671,3 +671,12 @@ int setup_profiling_timer(unsigned int multiplier)
 {
 	return -EINVAL;
 }
+
+/**
+ * smp_secondary_shutdown - Prepare secondary cpus for final shutdown.
+ */
+
+void smp_secondary_shutdown(void)
+{
+	cpu_ops_shutdown();
+}

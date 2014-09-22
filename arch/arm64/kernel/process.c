@@ -60,6 +60,10 @@ EXPORT_SYMBOL(__stack_chk_guard);
 
 void soft_restart(unsigned long addr)
 {
+#if defined(CONFIG_SMP)
+	if (smp_processor_id() == 0)  // FIXME: is 0 always the primary???
+		smp_secondary_shutdown();
+#endif
 	setup_mm_for_reboot();
 
 	cpu_soft_restart(virt_to_phys(cpu_reset), is_hyp_mode_available(),

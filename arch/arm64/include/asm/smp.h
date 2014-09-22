@@ -70,4 +70,6 @@ extern int __cpu_disable(void);
 extern void __cpu_die(unsigned int cpu);
 extern void cpu_die(void);
 
+void smp_secondary_shutdown(void);
+
 #endif /* ifndef __ASM_SMP_H */
