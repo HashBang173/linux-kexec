@@ -127,3 +127,6 @@ const struct cpu_operations smp_spin_table_ops = {
 	.cpu_prepare	= smp_spin_table_cpu_prepare,
 	.cpu_boot	= smp_spin_table_cpu_boot,
 };
+
+const struct cpu_operation_method cpu_operation_spin_table = {
+};

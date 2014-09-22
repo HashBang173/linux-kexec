@@ -67,4 +67,19 @@ extern const struct cpu_operations *cpu_ops[NR_CPUS];
 extern int __init cpu_read_ops(struct device_node *dn, int cpu);
 extern void __init cpu_read_bootcpu_ops(void);
 
+/**
+ * struct cpu_operation_method - Routines to manage the cpu operation method.
+ *
+ * @init: Prepares the system for operation.
+ * @shutdown: Prepares the system for final shutdown.
+ **/
+
+struct cpu_operation_method {
+	int (*init)(void);
+	void (*shutdown)(void);
+};
+
+int __init cpu_ops_init(void);
+void cpu_ops_shutdown(void);
+
 #endif /* ifndef __ASM_CPU_OPS_H */

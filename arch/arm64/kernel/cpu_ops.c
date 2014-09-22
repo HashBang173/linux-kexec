@@ -22,8 +22,15 @@
 #include <linux/of.h>
 #include <linux/string.h>
 
+extern const struct cpu_operation_method cpu_operation_spin_table;
 extern const struct cpu_operations smp_spin_table_ops;
+
+extern const struct cpu_operation_method cpu_operation_psci;
 extern const struct cpu_operations cpu_psci_ops;
+
+#if !defined(CONFIG_SMP)
+const struct cpu_operation_method cpu_operation_spin_table = {};
+#endif
 
 const struct cpu_operations *cpu_ops[NR_CPUS];
 
@@ -84,4 +91,26 @@ void __init cpu_read_bootcpu_ops(void)
 		return;
 	}
 	cpu_read_ops(dn, 0);
+}
+
+int __init cpu_ops_init(void)
+{
+	int result = 0;
+
+	if (cpu_operation_spin_table.init)
+		result = cpu_operation_spin_table.init();
+
+	if (!result && cpu_operation_psci.init)
+		result = cpu_operation_psci.init();
+
+	return result;
+}
+
+void cpu_ops_shutdown(void)
+{
+	if (cpu_operation_spin_table.shutdown)
+		cpu_operation_spin_table.shutdown();
+
+	if (cpu_operation_psci.shutdown)
+		cpu_operation_psci.shutdown();
 }

@@ -554,3 +554,5 @@ const struct cpu_operations cpu_psci_ops = {
 #endif
 };
 
+const struct cpu_operation_method cpu_operation_psci = {
+};
