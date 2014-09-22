@@ -51,6 +51,7 @@
 #include <asm/processor.h>
 #include <asm/stacktrace.h>
 #include <asm/virt.h>
+#include <linux/kvm_host.h>
 
 #ifdef CONFIG_CC_STACKPROTECTOR
 #include <linux/stackprotector.h>
@@ -60,6 +61,8 @@ EXPORT_SYMBOL(__stack_chk_guard);
 
 void soft_restart(unsigned long addr)
 {
+	kvm_cpu_shutdown(smp_processor_id());
+
 #if defined(CONFIG_SMP)
 	if (smp_processor_id() == 0)  // FIXME: is 0 always the primary???
 		smp_secondary_shutdown();

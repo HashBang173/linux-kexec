@@ -1038,6 +1038,13 @@ out_err:
 	return err;
 }
 
+void kvm_cpu_shutdown(int cpu)
+{
+	// TODO.
+
+	__kvm_cpu_shutdown(cpu, hyp_default_vectors);
+}
+
 /* NOP: Compiling as a module not supported */
 void kvm_arch_exit(void)
 {

@@ -216,6 +216,13 @@ static inline void __cpu_init_hyp_mode(phys_addr_t boot_pgd_ptr,
 		     hyp_stack_ptr, vector_ptr);
 }
 
+#if defined (CONFIG_KVM)
+void kvm_cpu_shutdown(int cpu);
+void __kvm_cpu_shutdown(int cpu, unsigned long vectors);
+#else
+static inline void kvm_cpu_shutdown(int cpu) {return;}
+#endif
+
 struct vgic_sr_vectors {
 	void	*save_vgic;
 	void	*restore_vgic;

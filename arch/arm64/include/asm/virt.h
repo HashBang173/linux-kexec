@@ -18,6 +18,10 @@
 #ifndef __ASM__VIRT_H
 #define __ASM__VIRT_H
 
+#include <linux/stringify.h>
+#include <asm/compiler.h>
+
+
 #define BOOT_CPU_MODE_EL1	(0xe11)
 #define BOOT_CPU_MODE_EL2	(0xe12)
 
@@ -54,6 +58,14 @@
 
 #define HVC_CALL_FUNC 4
 
+/*
+ * HVC_KVM_CPU_SHUTDOWN - Shutdown KVM on the calling CPU.
+ *
+ * @x0: The logical ID of the CPU.
+ */
+
+#define HVC_KVM_CPU_SHUTDOWN 4
+
 #ifndef __ASSEMBLY__
 
 /*
@@ -86,6 +98,18 @@ static inline bool is_hyp_mode_mismatched(void)
 /* The section containing the hypervisor text */
 extern char __hyp_text_start[];
 extern char __hyp_text_end[];
+
+#define __hash "#"
+#define __hasher(_y) _y
+#define __hcall(_x) "hvc " __hasher(__hash)__stringify(_x) "  // " #_x
+
+static inline void kvm_cpu_shutdown_2(int cpu)
+{
+	asm volatile(
+		__asmeq("%0", "x0")
+		__hcall(HVC_KVM_CPU_SHUTDOWN)
+		: "+r" (cpu));
+}
 
 #endif /* __ASSEMBLY__ */
 

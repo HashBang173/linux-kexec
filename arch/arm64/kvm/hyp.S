@@ -1112,6 +1112,12 @@ ENTRY(kvm_call_hyp)
 	ret
 ENDPROC(kvm_call_hyp)
 
+ENTRY(__kvm_cpu_shutdown)
+	hvc	#HVC_KVM_CPU_SHUTDOWN
+	ret
+ENDPROC(__kvm_cpu_shutdown)
+
+
 .macro invalid_vector	label, target
 	.align	2
 \label:
@@ -1178,6 +1184,14 @@ el1_sync:					// Guest trapped into EL2
 	blr	lr
 
 	pop	lr, xzr
+	b	2f
+
+1:	cmp	x10, #HVC_KVM_CPU_SHUTDOWN
+	b.ne	1f
+
+	// TODO.
+
+	b	2f
 
 1:
 2:	eret
