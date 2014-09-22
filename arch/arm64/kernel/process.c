@@ -101,15 +101,12 @@ void arch_cpu_idle_dead(void)
 /*
  * Called by kexec, immediately prior to machine_kexec().
  *
- * This must completely disable all secondary CPUs; simply causing those CPUs
- * to execute e.g. a RAM-based pin loop is not sufficient. This allows the
- * kexec'd kernel to use any and all RAM as it sees fit, without having to
- * avoid any code or data used by any SW CPU pin loop. The CPU hotplug
- * functionality embodied in disable_nonboot_cpus() to achieve this.
+ * This must shutdown all secondary CPUs.  The functionality
+ * embodied in smp_send_stop() will achieve this.
  */
 void machine_shutdown(void)
 {
-	disable_nonboot_cpus();
+	smp_send_stop();
 }
 
 /*
