@@ -27,10 +27,14 @@
 #include <asm/cputype.h>
 #include <asm/smp_plat.h>
 
+#include "cpu-properties.h"
+
 extern void secondary_holding_pen(void);
 volatile unsigned long secondary_holding_pen_release = INVALID_HWID;
 
-static phys_addr_t cpu_release_addr[NR_CPUS];
+static DEFINE_PER_CPU(struct cpu_properties, cpu_properties) = {
+	.cpu_release_addr = INVALID_ADDR,
+};
 
 /*
  * Write secondary_holding_pen_release in a way that is guaranteed to be
@@ -47,17 +51,15 @@ static void write_pen_release(u64 val)
 	__flush_dcache_area(start, size);
 }
 
-
 static int smp_spin_table_cpu_init(struct device_node *dn, unsigned int cpu)
 {
-	/*
-	 * Determine the address from which the CPU is polling.
-	 */
-	if (of_property_read_u64(dn, "cpu-release-addr",
-				 &cpu_release_addr[cpu])) {
-		pr_err("CPU %d: missing or invalid cpu-release-addr property\n",
-		       cpu);
+	int result;
+	struct cpu_properties *p = &per_cpu(cpu_properties, cpu);
 
+	result = read_cpu_properties(p, dn);
+
+	if (result) {
+		pr_err("ERROR: CPU %d: read_cpu_properties failed.\n", cpu);
 		return -1;
 	}
 
@@ -66,9 +68,10 @@ static int smp_spin_table_cpu_init(struct device_node *dn, unsigned int cpu)
 
 static int smp_spin_table_cpu_prepare(unsigned int cpu)
 {
+	const struct cpu_properties *p = &per_cpu(cpu_properties, cpu);
 	__le64 __iomem *release_addr;
 
-	if (!cpu_release_addr[cpu])
+	if (p->cpu_release_addr == INVALID_ADDR)
 		return -ENODEV;
 
 	/*
@@ -77,7 +80,7 @@ static int smp_spin_table_cpu_prepare(unsigned int cpu)
 	 * existing linear mapping, we can use it to cover both cases. In
 	 * either case the memory will be MT_NORMAL.
 	 */
-	release_addr = ioremap_cache(cpu_release_addr[cpu],
+	release_addr = ioremap_cache(p->cpu_release_addr,
 				     sizeof(*release_addr));
 	if (!release_addr)
 		return -ENOMEM;
