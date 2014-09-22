@@ -37,6 +37,7 @@
 			reg = <0x0 0x0>;
 			enable-method = "spin-table";
 			cpu-release-addr = <0x0 0x8000fff8>;
+			cpu-return-addr = <0x0 0x8000ffc0>;
 		};
 		cpu@1 {
 			device_type = "cpu";
@@ -44,6 +45,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "spin-table";
 			cpu-release-addr = <0x0 0x8000fff8>;
+			cpu-return-addr = <0x0 0x8000ffc0>;
 		};
 		cpu@2 {
 			device_type = "cpu";
@@ -51,6 +53,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "spin-table";
 			cpu-release-addr = <0x0 0x8000fff8>;
+			cpu-return-addr = <0x0 0x8000ffc0>;
 		};
 		cpu@3 {
 			device_type = "cpu";
@@ -58,6 +61,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "spin-table";
 			cpu-release-addr = <0x0 0x8000fff8>;
+			cpu-return-addr = <0x0 0x8000ffc0>;
 		};
 	};
 
