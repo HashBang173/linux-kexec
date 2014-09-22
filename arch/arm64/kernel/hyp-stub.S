@@ -52,10 +52,13 @@ ENDPROC(__hyp_stub_vectors)
 
 	.align 11
 
+#define ESR_EL2_EC_SHIFT	26
+#define ESR_EL2_EC_HVC64	0x16
+
 el1_sync:
 	mrs	x1, esr_el2
-	lsr	x1, x1, #26
-	cmp	x1, #0x16
+	lsr	x1, x1, #ESR_EL2_EC_SHIFT
+	cmp	x1, #ESR_EL2_EC_HVC64
 	b.ne	2f				// Not an HVC trap
 	cbz	x0, 1f
 	msr	vbar_el2, x0			// Set vbar_el2
