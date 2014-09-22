@@ -21,6 +21,26 @@
 #define BOOT_CPU_MODE_EL1	(0xe11)
 #define BOOT_CPU_MODE_EL2	(0xe12)
 
+/*
+ * HVC_GET_VECTORS - Return the value of the vbar_el2 register.
+ */
+
+#define HVC_GET_VECTORS 1
+
+/*
+ * HVC_SET_VECTORS - Set the value of the vbar_el2 register.
+ *
+ * @x0: Physical address of the new vector table.
+ */
+
+#define HVC_SET_VECTORS 2
+
+/*
+ * HVC_KVM_CALL_HYP - Execute kvm_call_hyp routine.
+ */
+
+#define HVC_KVM_CALL_HYP 3
+
 #ifndef __ASSEMBLY__
 
 /*

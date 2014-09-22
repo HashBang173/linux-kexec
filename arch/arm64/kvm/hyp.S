@@ -26,6 +26,7 @@
 #include <asm/kvm_asm.h>
 #include <asm/kvm_arm.h>
 #include <asm/kvm_mmu.h>
+#include <asm/virt.h>
 
 #define CPU_GP_REG_OFFSET(x)	(CPU_GP_REGS + x)
 #define CPU_XREG_OFFSET(x)	CPU_GP_REG_OFFSET(CPU_USER_PT_REGS + 8*x)
@@ -1105,12 +1106,9 @@ __hyp_panic_str:
  * in Hyp mode (see init_hyp_mode in arch/arm/kvm/arm.c).  Return values are
  * passed in r0 and r1.
  *
- * A function pointer with a value of 0 has a special meaning, and is
- * used to implement __hyp_get_vectors in the same way as in
- * arch/arm64/kernel/hyp_stub.S.
  */
 ENTRY(kvm_call_hyp)
-	hvc	#0
+	hvc	#HVC_KVM_CALL_HYP
 	ret
 ENDPROC(kvm_call_hyp)
 
@@ -1140,6 +1138,7 @@ el1_sync:					// Guest trapped into EL2
 	push	x2, x3
 
 	mrs	x1, esr_el2
+	and	x0, x1, #ESR_EL2_ISS
 	lsr	x2, x1, #ESR_EL2_EC_SHIFT
 
 	cmp	x2, #ESR_EL2_EC_HVC64
@@ -1149,15 +1148,19 @@ el1_sync:					// Guest trapped into EL2
 	cbnz	x3, el1_trap			// called HVC
 
 	/* Here, we're pretty sure the host called HVC. */
+	mov	x10, x0
 	pop	x2, x3
 	pop	x0, x1
 
-	/* Check for __hyp_get_vectors */
-	cbnz	x0, 1f
+	cmp	x10, #HVC_GET_VECTORS
+	b.ne	1f
 	mrs	x0, vbar_el2
 	b	2f
 
-1:	push	lr, xzr
+1:	cmp	x10, #HVC_KVM_CALL_HYP
+	b.ne	1f
+
+	push	lr, xzr
 
 	/*
 	 * Compute the function address in EL2, and shuffle the parameters.
@@ -1170,6 +1173,8 @@ el1_sync:					// Guest trapped into EL2
 	blr	lr
 
 	pop	lr, xzr
+
+1:
 2:	eret
 
 el1_trap:

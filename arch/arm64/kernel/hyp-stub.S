@@ -54,16 +54,29 @@ ENDPROC(__hyp_stub_vectors)
 
 #define ESR_EL2_EC_SHIFT	26
 #define ESR_EL2_EC_HVC64	0x16
+#define ESR_EL2_ISS		0xffff
 
 el1_sync:
-	mrs	x1, esr_el2
-	lsr	x1, x1, #ESR_EL2_EC_SHIFT
-	cmp	x1, #ESR_EL2_EC_HVC64
-	b.ne	2f				// Not an HVC trap
-	cbz	x0, 1f
-	msr	vbar_el2, x0			// Set vbar_el2
+	mrs	x10, esr_el2
+	lsr	x9, x10, #ESR_EL2_EC_SHIFT	// x9=EC
+	and	x10, x10, #ESR_EL2_ISS		// x10=ISS
+
+	cmp     x9, #ESR_EL2_EC_HVC64
+	b.ne    2f                              // Not a host HVC trap
+
+	mrs     x9, vttbr_el2
+	cbnz    x9, 2f                          // Not a host HVC trap
+
+	cmp	x10, #HVC_GET_VECTORS
+	b.ne	1f
+	mrs	x0, vbar_el2
 	b	2f
-1:	mrs	x0, vbar_el2			// Return vbar_el2
+
+1:	cmp	x10, #HVC_SET_VECTORS
+	b.ne	1f
+	msr	vbar_el2, x0
+
+1:
 2:	eret
 ENDPROC(el1_sync)
 
@@ -103,11 +116,12 @@ ENDPROC(\label)
  * initialisation entry point.
  */
 
-ENTRY(__hyp_get_vectors)
-	mov	x0, xzr
-	// fall through
 ENTRY(__hyp_set_vectors)
-	hvc	#0
+	hvc	#HVC_SET_VECTORS
+	ret
+ENDPROC(__hyp_set_vectors)
+
+ENTRY(__hyp_get_vectors)
+	hvc	#HVC_GET_VECTORS
 	ret
 ENDPROC(__hyp_get_vectors)
-ENDPROC(__hyp_set_vectors)
