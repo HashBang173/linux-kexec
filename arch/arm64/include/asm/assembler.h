@@ -23,6 +23,39 @@
 #include <asm/ptrace.h>
 #include <asm/thread_info.h>
 
+/**
+ * macro atomic - Macros for simple atomic operations.
+ *
+ * @op: The operation to perform.
+ * @reg: A 32 or 64 bit register to operate on.
+ * @value: The value for the operation.
+ * @tmp1:  A scratch register the same size as @reg.  Defaluts to x20.
+ * @tmp2: A 32 bit scratch register.  Defaluts to w21.
+ **/
+
+	.macro	atomic	op:req, reg:req, value:req, tmp1=x20, tmp2=w21
+.Latomic\@:	ldxr	\tmp1, [\reg]
+	\op	\tmp1, \tmp1, \value
+	stxr	\tmp2, \tmp1, [\reg]
+	cbnz	\tmp2, .Latomic\@
+	.endm
+
+	.macro	atomic_add	reg:req, value:req, tmp1=x20, tmp2=w21
+	atomic add, \reg, \value, \tmp1, \tmp2
+	.endm
+
+	.macro	atomic_sub	reg:req, value:req, tmp1, tmp2
+	atomic sub, \reg, \value, \tmp1, \tmp2
+	.endm
+
+	.macro	atomic_inc	reg:req, tmp1, tmp2
+	atomic add, \reg, 1, \tmp1, \tmp2
+	.endm
+
+	.macro	atomic_dec	reg:req, tmp1, tmp2
+	atomic sub, \reg, 1, \tmp1, \tmp2
+	.endm
+
 /*
  * Stack pushing/popping (register pairs only). Equivalent to store decrement
  * before, load increment after.
