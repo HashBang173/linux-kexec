@@ -537,6 +537,16 @@ int machine_kexec_prepare(struct kimage *image)
 	kexec_dtb_addr = dtb_seg->mem;
 	kexec_kimage_start = image->start;
 
+	/* TODO: Remove this check when KVM supports cpu reset. */
+
+	if (IS_ENABLED(CONFIG_KVM)) {
+		pr_err("%s: Sorry, your kernel is configued with KVM support "
+			"(CONFIG_KVM=y) which is currently not compatable with "
+			"kexec re-boot.\n", __func__);
+		result = -ENOSYS;
+		goto on_error;
+	}
+
 	goto on_exit;
 
 on_error:
