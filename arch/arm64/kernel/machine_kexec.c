@@ -8,6 +8,8 @@
  * published by the Free Software Foundation.
  */
 
+#define DEBUG 1
+
 #include <linux/kernel.h>
 #include <linux/kexec.h>
 #include <linux/of_fdt.h>
@@ -204,6 +206,95 @@ static void _kexec_image_info(const char *func, int line,
 				pr_devel("        dtb segment\n");
 		}
 	}
+}
+
+/**
+ * kexec_list_dump - Debugging dump of the kimage page list.
+ */
+
+static void kexec_list_dump_cb(void *ctx, unsigned int flag, void *addr,
+	void *dest)
+{
+	unsigned int verbosity = (unsigned long)ctx;
+
+	switch (flag) {
+	case IND_INDIRECTION:
+		pr_devel("  I: %010lx (%p)\n",
+			(unsigned long)virt_to_phys(addr), addr);
+		break;
+	case IND_DESTINATION:
+		pr_devel("  D: %010lx (%p)\n",
+			(unsigned long)virt_to_phys(addr), addr);
+		break;
+	case IND_SOURCE:
+		if (verbosity == 2)
+			pr_devel("S");
+		if (verbosity == 3)
+			pr_devel("  S -> %010lx (%p)\n",
+				(unsigned long)virt_to_phys(dest), dest);
+		if (verbosity == 4)
+			pr_devel("  S: %010lx (%p) -> %010lx (%p)\n",
+				(unsigned long)virt_to_phys(addr), addr,
+				(unsigned long)virt_to_phys(dest), dest);
+		break;
+	case IND_DONE:
+		pr_devel("  DONE\n");
+		break;
+	default:
+		pr_devel("  ?: %010lx (%p)\n",
+			(unsigned long)virt_to_phys(addr), addr);
+		break;
+	}
+}
+
+#define kexec_list_dump(_i, _v) _kexec_list_dump(__func__, __LINE__, _i, _v)
+static void _kexec_list_dump(const char *func, int line,
+	unsigned long kimage_head, unsigned int verbosity)
+{
+	if (!debug)
+		return;
+
+	pr_devel("%s:%d: kexec_list_dump:\n", func, line);
+
+	kexec_list_walk((void *)(unsigned long)verbosity, kimage_head,
+		kexec_list_dump_cb);
+}
+
+static void dump_cpus(void)
+{
+	unsigned int cpu;
+	char s[1024];
+	char *p;
+
+	p = s + sprintf(s, "%s: all:       ", __func__);
+	for_each_cpu(cpu, cpu_all_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: possible:  ", __func__);
+	for_each_possible_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: present:   ", __func__);
+	for_each_present_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: active:    ", __func__);
+	for_each_cpu(cpu, cpu_active_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: online:    ", __func__);
+	for_each_online_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: not online:", __func__);
+	for_each_cpu_not(cpu, cpu_online_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
 }
 
 /**
@@ -613,6 +704,9 @@ void machine_kexec(struct kimage *image)
 		(void *)kexec_kimage_head);
 	pr_devel("%s:%d: kexec_kimage_start:       %p\n", __func__, __LINE__,
 		(void *)kexec_kimage_start);
+
+	kexec_list_dump(image->head, 1);
+	dump_cpus();
 
 	/*
 	 * Copy relocate_new_kernel to the reboot_code_buffer for use
