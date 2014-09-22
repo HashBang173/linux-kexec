@@ -497,6 +497,7 @@ static void __init mm_init(void)
 	vmalloc_init();
 }
 
+#include <asm/virt.h>
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
@@ -538,6 +539,7 @@ asmlinkage __visible void __init start_kernel(void)
 	build_all_zonelists(NULL, NULL);
 	page_alloc_init();
 
+	printk("%s:%d: HYP cpu%u: %c\n", __func__, __LINE__, 0, (is_hyp_mode_available() ? 'y' : 'n'));
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
