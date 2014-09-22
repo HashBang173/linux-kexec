@@ -555,6 +555,15 @@ static void ipi_cpu_stop(unsigned int cpu)
 
 	local_irq_disable();
 
+	/* If we have the cpu ops use them. */
+
+	if (cpu_ops[cpu]->cpu_disable &&
+	    cpu_ops[cpu]->cpu_die &&
+	    !cpu_ops[cpu]->cpu_disable(cpu))
+		cpu_ops[cpu]->cpu_die(cpu);
+
+	/* Otherwise spin here. */
+
 	while (1)
 		cpu_relax();
 }
