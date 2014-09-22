@@ -36,6 +36,8 @@
 #include <asm/page.h>
 #include <asm/virt.h>
 
+#include "cpu-properties.h"
+
 #define KERNEL_RAM_VADDR	(PAGE_OFFSET + TEXT_OFFSET)
 
 #if (TEXT_OFFSET & 0xfff) != 0
@@ -377,6 +379,8 @@ ENTRY(__boot_cpu_mode)
 	.align	3
 1:	.quad	.
 	.quad	secondary_holding_pen_release
+	.quad	secondary_holding_pen_return
+	.quad	secondary_holding_pen_count
 
 	/*
 	 * This provides a "holding pen" for platforms to hold all secondary
@@ -388,16 +392,40 @@ ENTRY(secondary_holding_pen)
 	bl	set_cpu_boot_mode_flag
 	mrs	x0, mpidr_el1
 	ldr     x1, =MPIDR_HWID_BITMASK
-	and	x0, x0, x1
+	and	x0, x0, x1			// x0=hwid
 	adr	x1, 1b
 	ldp	x2, x3, [x1]
+	ldp	x4, x5, [x1, #16]
 	sub	x1, x1, x2
-	add	x3, x3, x1
-pen:	ldr	x4, [x3]
-	cmp	x4, x0
-	b.eq	secondary_startup
+	add	x3, x3, x1			// x3=secondary_holding_pen_release
+	add	x4, x4, x1			// x4=secondary_holding_pen_return
+	add	x5, x5, x1			// x5=secondary_holding_pen_count
+
+	atomic_inc x5
+.Lpen:
+	ldr	x10, [x3]
+	cmp	x10, x0
+	b.eq	.Lbreak
 	wfe
-	b	pen
+	b	.Lpen
+
+.Lbreak:
+	mov	x10, INVALID_ADDR		// test secondary_holding_pen_return
+	ldr	x11, [x4]
+	cmp	x10, x11
+	b.ne	.Lshutdown
+
+	/* Startup. */
+
+	atomic_dec x5
+
+	b	secondary_startup
+
+.Lshutdown:
+	atomic_dec x5
+	mov 	x0, x4
+	b	soft_restart
+
 ENDPROC(secondary_holding_pen)
 
 	/*
