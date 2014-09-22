@@ -36,6 +36,20 @@ extern unsigned long kexec_dtb_addr;
 extern unsigned long kexec_kimage_head;
 extern unsigned long kexec_kimage_start;
 
+/*
+ * kexec_ignore_compat_check - Set to ignore kexec compatibility checks.
+ */
+
+static int __read_mostly kexec_ignore_compat_check;
+
+static int __init setup_kexec_ignore_compat_check(char *__unused)
+{
+	kexec_ignore_compat_check = 1;
+	return 1;
+}
+
+__setup("kexec_ignore_compat_check", setup_kexec_ignore_compat_check);
+
 /**
  * struct kexec_boot_info - Boot info needed by the local kexec routines.
  */
@@ -410,7 +424,8 @@ static int kexec_compat_check(const struct kexec_ctx *ctx)
 			if (cp_1->hwid != cp_2->hwid)
 				continue;
 
-			if (!kexec_cpu_check(cp_1, cp_2))
+			if (!kexec_cpu_check(cp_1, cp_2) &&
+				!kexec_ignore_compat_check)
 				return -EINVAL;
 
 			to_process--;
@@ -506,7 +521,7 @@ int machine_kexec_prepare(struct kimage *image)
 
 	result = kexec_compat_check(ctx);
 
-	if (result)
+	if (result && !kexec_ignore_compat_check)
 		goto on_error;
 
 	kexec_dtb_addr = dtb_seg->mem;

@@ -1529,6 +1529,19 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 			use the HighMem zone if it exists, and the Normal
 			zone if it does not.
 
+	kexec_ignore_compat_check [KEXEC,ARM64]
+			This parameter specifies whether or not to ignore arm64
+			kexec compatibility checks.  The default is to honor the
+			checks.  Set this parameter to ignore all kexec
+			compatibility checks on arm64 systems.  Setting this
+			could cause the system to become unstable after a kexec
+			re-boot.  If unsure, do not set.
+
+			For some systems the compatibility checks may be too
+			restrictive, and setting this parameter could allow
+			those systems to kexec to kernel images that would not
+			pass the compatibility checks.
+
 	kgdbdbgp=	[KGDB,HW] kgdb over EHCI usb debug port.
 			Format: <Controller#>[,poll interval]
 			The controller # is the number of the ehci usb debug
