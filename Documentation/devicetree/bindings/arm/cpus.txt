@@ -205,6 +205,15 @@ nodes to be present and contain the properties described below.
 			  property identifying a 64-bit zero-initialised
 			  memory location.
 
+	- cpu-return-addr
+		Usage: recomended for all ARM v8 CPUs that have an
+		       "enable-method" property value of "spin-table".
+		Value type: <prop-encoded-array>
+		Definition:
+			# On ARM v8 64-bit systems must be a two cell property.
+			The value is a 64 bit physical address that secondary
+			CPU execution will transfer to upon CPU shutdown.
+
 	- qcom,saw
 		Usage: required for systems that have an "enable-method"
 		       property value of "qcom,kpss-acc-v1" or
@@ -295,6 +304,7 @@ cpus {
 		reg = <0x0 0x0>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@1 {
@@ -303,6 +313,7 @@ cpus {
 		reg = <0x0 0x1>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100 {
@@ -311,6 +322,7 @@ cpus {
 		reg = <0x0 0x100>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@101 {
@@ -319,6 +331,7 @@ cpus {
 		reg = <0x0 0x101>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@10000 {
@@ -327,6 +340,7 @@ cpus {
 		reg = <0x0 0x10000>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@10001 {
@@ -335,6 +349,7 @@ cpus {
 		reg = <0x0 0x10001>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@10100 {
@@ -343,6 +358,7 @@ cpus {
 		reg = <0x0 0x10100>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@10101 {
@@ -351,6 +367,7 @@ cpus {
 		reg = <0x0 0x10101>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100000000 {
@@ -359,6 +376,7 @@ cpus {
 		reg = <0x1 0x0>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100000001 {
@@ -367,6 +385,7 @@ cpus {
 		reg = <0x1 0x1>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100000100 {
@@ -375,6 +394,7 @@ cpus {
 		reg = <0x1 0x100>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100000101 {
@@ -383,6 +403,7 @@ cpus {
 		reg = <0x1 0x101>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100010000 {
@@ -391,6 +412,7 @@ cpus {
 		reg = <0x1 0x10000>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100010001 {
@@ -399,6 +421,7 @@ cpus {
 		reg = <0x1 0x10001>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100010100 {
@@ -407,6 +430,7 @@ cpus {
 		reg = <0x1 0x10100>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 
 	cpu@100010101 {
@@ -415,6 +439,7 @@ cpus {
 		reg = <0x1 0x10101>;
 		enable-method = "spin-table";
 		cpu-release-addr = <0 0x20000000>;
+		cpu-return-addr = <0 0x20001000>
 	};
 };
 
