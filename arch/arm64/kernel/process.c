@@ -50,6 +50,7 @@
 #include <asm/mmu_context.h>
 #include <asm/processor.h>
 #include <asm/stacktrace.h>
+#include <asm/virt.h>
 
 #ifdef CONFIG_CC_STACKPROTECTOR
 #include <linux/stackprotector.h>
@@ -60,7 +61,10 @@ EXPORT_SYMBOL(__stack_chk_guard);
 void soft_restart(unsigned long addr)
 {
 	setup_mm_for_reboot();
-	cpu_soft_restart(virt_to_phys(cpu_reset), addr);
+
+	cpu_soft_restart(virt_to_phys(cpu_reset), is_hyp_mode_available(),
+			 addr);
+
 	/* Should never get here */
 	BUG();
 }
