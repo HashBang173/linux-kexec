@@ -33,6 +33,7 @@
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 #include <linux/usb/ehci_pdriver.h>
+#include <linux/acpi.h>
 
 #include "ehci.h"
 
@@ -397,6 +398,12 @@ static const struct of_device_id vt8500_ehci_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, vt8500_ehci_ids);
 
+static const struct acpi_device_id vt5800_ehci_acpi_ids[] = {
+	{ "PNP0D20", 0 },
+	{ }
+};
+MODULE_DEVICE_TABLE(acpi, vt5800_ehci_acpi_ids);
+
 static const struct platform_device_id ehci_platform_table[] = {
 	{ "ehci-platform", 0 },
 	{ }
@@ -415,6 +422,7 @@ static struct platform_driver ehci_platform_driver = {
 		.name	= "ehci-platform",
 		.pm	= &ehci_platform_pm_ops,
 		.of_match_table = vt8500_ehci_ids,
+		.acpi_match_table = ACPI_PTR(vt5800_ehci_acpi_ids),
 	}
 };
 
