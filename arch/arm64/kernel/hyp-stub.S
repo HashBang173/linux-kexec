@@ -66,9 +66,20 @@ el1_sync:
 	mrs	x0, vbar_el2
 	b	2f
 
-1:	cmp	x18, #HVC_SET_VECTORS
-	b.ne	2f
-	msr	vbar_el2, x0
+1:	cmp     x18, #HVC_SET_VECTORS
+	b.ne    1f
+	msr     vbar_el2, x0
+	b       2f
+
+1:	cmp     x18, #HVC_CALL_FUNC
+	b.ne    2f
+	mov     x18, lr
+	mov     lr, x0
+	mov     x0, x1
+	mov     x1, x2
+	mov     x2, x3
+	blr     lr
+	mov     lr, x18
 
 2:	eret
 ENDPROC(el1_sync)
