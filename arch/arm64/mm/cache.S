@@ -20,8 +20,7 @@
 #include <linux/linkage.h>
 #include <linux/init.h>
 #include <asm/assembler.h>
-
-#include "proc-macros.S"
+#include <asm/proc-macros.S>
 
 /*
  *	__flush_dcache_all()
