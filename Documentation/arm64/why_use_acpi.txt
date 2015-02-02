@@ -1,0 +1,231 @@
+Why ACPI on ARM?
+----------------
+Copyright (c) 2015, Linaro, Ltd.
+Author: Grant Likely <grant.likely@linaro.org>
+
+Why are we doing ACPI on ARM? That question has been asked many times, but
+we haven’t yet had a good summary of the most important reasons for wanting
+ACPI on ARM. This article is an attempt to state the rationale clearly.
+
+During an email conversation late last year, Catalin Marinas asked for
+a summary of exactly why we want ACPI on ARM, Dong Wei replied with the
+following list:
+> 1. Support multiple OSes, including Linux and Windows
+> 2. Support device configurations
+> 3. Support dynamic device configurations (hot add/removal)
+> 4. Support hardware abstraction through control methods
+> 5. Support power management
+> 6. Support thermal management
+> 7. Support RAS interfaces
+
+The above list is certainly true in that all of them need to be supported.
+However, that list doesn’t give the rationale for choosing ACPI. We already
+have DT mechanisms for doing most of the above, and can certainly create
+new bindings for anything that is missing. So, if it isn’t an issue of
+functionality, then how does ACPI differ from DT and why is ACPI a better
+fit for general purpose ARM servers?
+
+The difference is in the support model. To explain what I mean, I’m first
+going to expand on each of the items above and discuss the similarities and
+differences between ACPI and DT. Then, with that as the groundwork, I’ll
+discuss how ACPI is a better fit for the general purpose hardware support
+model.
+
+
+Device Configurations
+---------------------
+2. Support device configurations
+3. Support dynamic device configurations (hot add/removal)
+
+From day one, DT was about device configurations. There isn’t any significant
+difference between ACPI & DT here. In fact, the majority of ACPI tables are
+completely analogous to DT descriptions. With the exception of the DSDT and
+SSDT tables, most ACPI tables are merely flat data used to describe hardware.
+
+DT platforms have also supported dynamic configuration and hotplug for years.
+There isn’t a lot here that differentiates between ACPI and DT. The biggest
+difference is that dynamic changes to the ACPI namespace can be triggered by
+ACPI methods, whereas for DT changes are received as messages from firmware
+and have been very much platform specific (e.g. IBM pSeries does this)
+
+
+Power Management
+----------------
+4. Support hardware abstraction through control methods
+5. Support power management
+6. Support thermal management
+
+Power, thermal, and clock management can all be dealt with as a group. ACPI
+defines a power management model (OSPM) that both the platform and the OS
+conform to. The OS implements the OSPM state machine, but the platform can
+provide state change behaviour in the form of bytecode methods. Methods can
+access hardware directly or hand off PM operations to a coprocessor. The OS
+really doesn’t have to care about the details as long as the platform obeys
+the rules of the OSPM model.
+
+With DT, the kernel has device drivers for each and every component in the
+platform, and configures them using DT data. DT itself doesn’t have a PM model.
+Rather the PM model is an implementation detail of the kernel. Device drivers
+use DT data to decide how to handle PM state changes. We have clock, pinctrl,
+and regulator frameworks in the kernel for working out runtime PM. However,
+this only works when all the drivers and support code have been merged into
+the kernel. When the kernel’s PM model doesn’t work for new hardware, then we
+change the model. This works very well for mobile/embedded because the vendor
+controls the kernel. We can change things when we need to, but we also struggle
+with getting board support mainlined.
+
+This difference has a big impact when it comes to OS support. Engineers from
+hardware vendors, Microsoft, and most vocally Red Hat have all told me bluntly
+that rebuilding the kernel doesn’t work for enterprise OS support. Their model
+is based around a fixed OS release that ideally boots out-of-the-box. It may
+still need additional device drivers for specific peripherals/features, but
+from a system view, the OS works. When additional drivers are provided
+separately, those drivers fit within the existing OSPM model for power
+management. This is where ACPI has a technical advantage over DT. The ACPI
+OSPM model and it’s bytecode gives the HW vendors a level of abstraction
+under their control, not the kernel’s. When the hardware behaves differently
+from what the OS expects, the vendor is able to change the behaviour without
+changing the HW or patching the OS.
+
+At this point you’d be right to point out that it is harder to get the whole
+system working correctly when behaviour is split between the kernel and the
+platform. The OS must trust that the platform doesn’t violate the OSPM model.
+All manner of bad things happen if it does. That is exactly why the DT model
+doesn’t encode behaviour: It is easier to make changes and fix bugs when
+everything is within the same code base. We don’t need a platform/kernel
+split when we can modify the kernel.
+
+However, the enterprise folks don’t have that luxury. The platform/kernel
+split isn’t a design choice. It is a characteristic of the market. Hardware
+and OS vendors each have their own product timetables, and they don’t line
+up. The timeline for getting patches into the kernel and flowing through into
+OS releases puts OS support far downstream from the actual release of hardware.
+Hardware vendors simply cannot wait for OS support to come online to be able to
+release their products. They need to be able to work with available releases,
+and make their hardware behave in the way the OS expects. The advantage of ACPI
+OSPM is that it defines behaviour and limits what the hardware is allowed to do
+without involving the kernel.
+
+What remains is sorting out how we make sure everything works. How do we make
+sure there is enough cross platform testing to ensure new hardware doesn’t
+ship broken and that new OS releases don’t break on old hardware? Those are
+the reasons why a UEFI/ACPI firmware summit is being organized, it’s why the
+UEFI forum holds plugfests 3 times a year, and it is why we’re working on
+FWTS and LuvOS.
+
+
+Reliability, Availability & Serviceability (RAS)
+------------------------------------------------
+7. Support RAS interfaces
+
+This isn’t a question of whether or not DT can support RAS. Of course it can.
+Rather it is a matter of RAS bindings already existing for ACPI, including a
+usage model. We’ve barely begun to explore this on DT. This item doesn’t make
+ACPI technically superior to DT, but it certainly makes it more mature.
+
+
+Multiplatform Support
+---------------------
+1. Support multiple OSes, including Linux and Windows
+
+I’m tackling this item last because I think it is the most contentious for
+those of us in the Linux world. I wanted to get the other issues out of the
+way before addressing it.
+
+The separation between hardware vendors and OS vendors in the server market
+is new for ARM. For the first time ARM hardware and OS release cycles are
+completely decoupled from each other, and neither are expected to have specific
+knowledge of the other (ie. the hardware vendor doesn’t control the choice of
+OS). ARM and their partners want to create an ecosystem of independent OSes
+and hardware platforms that don’t explicitly require the former to be ported
+to the latter.
+
+Now, one could argue that Linux is driving the potential market for ARM
+servers, and therefore Linux is the only thing that matters, but hardware
+vendors don’t see it that way. For hardware vendors it is in their best
+interest to support as wide a choice of OSes as possible in order to catch
+the widest potential customer base. Even if the majority choose Linux, some
+will choose BSD, some will choose Windows, and some will choose something
+else. Whether or not we think this is foolish is beside the point; it isn’t
+something we have influence over.
+
+During early ARM server planning meetings between ARM, its partners and other
+industry representatives (myself included) we discussed this exact point.
+Before us were two options, DT and ACPI. As one of the Linux people in the
+room, I advised that ACPI’s closed governance model was a show stopper for
+Linux and that DT is the working interface. Microsoft on the other hand made
+it abundantly clear that ACPI was the only interface that they would support.
+For their part, the hardware vendors stated the platform abstraction behaviour
+of ACPI is a hard requirement for their support model and that they would not
+close the door on either Linux or Windows.
+
+However, the one thing that all of us could agree on was that supporting
+multiple interfaces doesn’t help anyone: It would require twice as much
+effort on defining bindings (once for Linux-DT and once for Windows-ACPI)
+and it would require firmware to describe everything twice. Eventually we
+reached the compromise to use ACPI, but on the condition of opening the
+governance process to give Linux engineers equal influence over the
+specification. The fact that we now have a much better seat at the ACPI
+table, for both ARM and x86, is a direct result of these early ARM server
+negotiations. We are no longer second class citizens in the ACPI world and
+are actually driving much of the recent development.
+
+I know that this line of thought is more about market forces rather than a
+hard technical argument between ACPI and DT, but it is an equally significant
+one. Agreeing on a single way of doing things is important. The ARM server
+ecosystem is better for the agreement to use the same interface for all
+operating systems. This is what is meant by standards compliant. The standard
+is a codification of the mutually agreed interface. It provides confidence
+that all vendors are using the same rules for interoperability.
+
+
+Summary
+-------
+To summarize, here is the short form rationale for ACPI on ARM:
+
+-- ACPI’s bytecode allows the platform to encode behaviour. DT explicitly
+   does not support this. For hardware vendors, being able to encode behaviour
+   is an important tool for supporting operating system releases on new
+   hardware.
+
+-- ACPI’s OSPM defines a power management model that constrains what the
+   platform is allowed into a specific model while still having flexibility
+   in hardware design.
+
+-- For enterprise use-cases, ACPI has extablished bindings, such as for RAS,
+   which are used in production. DT does not. Yes, we can define those bindings
+   but doing so means ARM and x86 will use completely different code paths in
+   both firmware and the kernel.
+
+-- Choosing a single interface for platform/OS abstraction is important. It
+   is not reasonable to require vendors to implement both DT and ACPI if they
+   want to support multiple operating systems. Agreeing on a single interface
+   instead of being fragmented into per-OS interfaces makes for better
+   interoperability overall.
+
+-- The ACPI governance process works well and we’re at the same table as HW
+   vendors and other OS vendors. In fact, there is no longer any reason to
+   feel that ACPI is a Windows thing or that we are playing second fiddle to
+   Microsoft. The move of ACPI governance into the UEFI forum has significantly
+   opened up the processes, and currently, a large portion of the changes being
+   made to ACPI is being driven by Linux.
+
+At the beginning of this article I made the statement that the difference
+is in the support model. For servers, responsibility for hardware behaviour
+cannot be purely the domain of the kernel, but rather is split between the
+platform and the kernel. ACPI frees the OS from needing to understand all
+the minute details of the hardware so that the OS doesn’t need to be ported
+to each and every device individually. It allows the hardware vendors to take
+responsibility for PM behaviour without depending on an OS release cycle which
+it is not under their control.
+
+ACPI is also important because hardware and OS vendors have already worked
+out how to use it to support the general purpose ecosystem. The infrastructure
+is in place, the bindings are in place, and the process is in place. DT does
+exactly what we need it to when working with vertically integrated devices,
+but we don’t have good processes for supporting what the server vendors need.
+We could potentially get there with DT, but doing so doesn’t buy us anything.
+ACPI already does what the hardware vendors need, Microsoft won’t collaborate
+with us on DT, and the hardware vendors would still need to provide two
+completely separate firmware interface; one for Linux and one for Windows.
+
