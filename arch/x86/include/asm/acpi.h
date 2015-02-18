@@ -32,6 +32,10 @@
 #include <asm/mpspec.h>
 #include <asm/realmode.h>
 
+typedef u32 phys_cpuid_t;
+
+#define CPU_PHYS_ID_INVALID (u32)(-1)
+
 #ifdef CONFIG_ACPI
 extern int acpi_lapic;
 extern int acpi_ioapic;

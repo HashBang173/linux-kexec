@@ -34,6 +34,10 @@
 #include <linux/numa.h>
 #include <asm/numa.h>
 
+typedef u32 phys_cpuid_t;
+
+#define CPU_PHYS_ID_INVALID (u32)(-1)
+
 #ifdef	CONFIG_ACPI
 extern int acpi_lapic;
 #define acpi_disabled 0	/* ACPI always enabled on IA64 */
