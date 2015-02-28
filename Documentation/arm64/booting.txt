@@ -196,7 +196,7 @@ following manner:
   naturally-aligned 64-bit zero-initalised memory location.
 
   These CPUs should spin outside of the kernel in a reserved area of
-  memory (communicated to the kernel by a /memreserve/ region in the
+  memory (communicated to the kernel by a reserved-memory node in the
   device tree) polling their cpu-release-addr location, which must be
   contained in the reserved region.  A wfe instruction may be inserted
   to reduce the overhead of the busy-loop and a sev will be issued by
@@ -209,7 +209,7 @@ following manner:
 - CPUs with a "psci" enable method should remain outside of
   the kernel (i.e. outside of the regions of memory described to the
   kernel in the memory node, or in a reserved area of memory described
-  to the kernel by a /memreserve/ region in the device tree).  The
+  to the kernel by a reserved-memory node in the device tree).  The
   kernel will issue CPU_ON calls as described in ARM document number ARM
   DEN 0022A ("Power State Coordination Interface System Software on ARM
   processors") to bring CPUs into the kernel.
