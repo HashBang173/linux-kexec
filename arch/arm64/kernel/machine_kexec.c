@@ -16,6 +16,9 @@
 #include <asm/cacheflush.h>
 #include <asm/system_misc.h>
 
+/* TODO: Remove this include when KVM can support a kexec reboot. */
+#include <asm/virt.h>
+
 /* Global variables for the relocate_kernel routine. */
 extern const unsigned char relocate_new_kernel[];
 extern const unsigned long relocate_new_kernel_size;
@@ -99,6 +102,13 @@ int machine_kexec_prepare(struct kimage *image)
 	arm64_kexec_kimage_start = image->start;
 
 	kexec_image_info(image);
+
+	/* TODO: Remove this message when KVM can support a kexec reboot. */
+	if (IS_ENABLED(CONFIG_KVM) && is_hyp_mode_available()) {
+		pr_err("%s: Your kernel is configured with KVM support (CONFIG_KVM=y) which currently does not allow for kexec re-boot.\n",
+			__func__);
+		return -ENOSYS;
+	}
 
 	return 0;
 }
