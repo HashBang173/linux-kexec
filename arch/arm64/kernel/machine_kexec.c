@@ -35,6 +35,37 @@ static bool kexec_is_dtb(const void *dtb)
 }
 
 /**
+ * kexec_image_info - For debugging output.
+ */
+#define kexec_image_info(_i) _kexec_image_info(__func__, __LINE__, _i)
+static void _kexec_image_info(const char *func, int line,
+	const struct kimage *image)
+{
+	unsigned long i;
+
+#if !defined(DEBUG)
+	return;
+#endif
+	pr_devel("%s:%d:\n", func, line);
+	pr_devel("  kexec image info:\n");
+	pr_devel("    type:        %d\n", image->type);
+	pr_devel("    start:       %lx\n", image->start);
+	pr_devel("    head:        %lx\n", image->head);
+	pr_devel("    nr_segments: %lu\n", image->nr_segments);
+
+	for (i = 0; i < image->nr_segments; i++) {
+		pr_devel("      segment[%lu]: %016lx - %016lx, %lx bytes, %lu pages%s\n",
+			i,
+			image->segment[i].mem,
+			image->segment[i].mem + image->segment[i].memsz,
+			image->segment[i].memsz,
+			image->segment[i].memsz /  PAGE_SIZE,
+			(kexec_is_dtb(image->segment[i].buf) ?
+				", dtb segment" : ""));
+	}
+}
+
+/**
  * kexec_find_dtb_seg - Helper routine to find the dtb segment.
  */
 static const struct kexec_segment *kexec_find_dtb_seg(
@@ -66,6 +97,8 @@ int machine_kexec_prepare(struct kimage *image)
 
 	arm64_kexec_dtb_addr = dtb_seg ? dtb_seg->mem : 0;
 	arm64_kexec_kimage_start = image->start;
+
+	kexec_image_info(image);
 
 	return 0;
 }
@@ -120,6 +153,27 @@ void machine_kexec(struct kimage *image)
 
 	reboot_code_buffer_phys = page_to_phys(image->control_code_page);
 	reboot_code_buffer = phys_to_virt(reboot_code_buffer_phys);
+
+	kexec_image_info(image);
+
+	pr_devel("%s:%d: control_code_page:        %p\n", __func__, __LINE__,
+		image->control_code_page);
+	pr_devel("%s:%d: reboot_code_buffer_phys:  %pa\n", __func__, __LINE__,
+		&reboot_code_buffer_phys);
+	pr_devel("%s:%d: reboot_code_buffer:       %p\n", __func__, __LINE__,
+		reboot_code_buffer);
+	pr_devel("%s:%d: relocate_new_kernel:      %p\n", __func__, __LINE__,
+		relocate_new_kernel);
+	pr_devel("%s:%d: relocate_new_kernel_size: 0x%lx(%lu) bytes\n",
+		__func__, __LINE__, relocate_new_kernel_size,
+		relocate_new_kernel_size);
+
+	pr_devel("%s:%d: kexec_dtb_addr:           %lx\n", __func__, __LINE__,
+		arm64_kexec_dtb_addr);
+	pr_devel("%s:%d: kexec_kimage_head:        %lx\n", __func__, __LINE__,
+		arm64_kexec_kimage_head);
+	pr_devel("%s:%d: kexec_kimage_start:       %lx\n", __func__, __LINE__,
+		arm64_kexec_kimage_start);
 
 	/*
 	 * Copy relocate_new_kernel to the reboot_code_buffer for use
