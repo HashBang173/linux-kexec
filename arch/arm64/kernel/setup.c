@@ -325,6 +325,82 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 	dump_stack_set_arch_desc("%s (DT)", of_flat_dt_get_machine_name());
 }
 
+#ifdef CONFIG_KEXEC
+static inline unsigned long long get_total_mem(void)
+{
+	unsigned long total;
+
+	total = max_low_pfn - min_low_pfn;
+	return total << PAGE_SHIFT;
+}
+
+/*
+ * reserve_crashkernel() - reserves memory are for crash kernel
+ *
+ * This function reserves memory area given in "crashkernel=" kernel command
+ * line parameter. The memory reserved is used by a dump capture kernel when
+ * primary kernel is crashing.
+ */
+static void __init reserve_crashkernel(void)
+{
+	unsigned long long crash_size, crash_base;
+	unsigned long long total_mem;
+	int ret;
+
+	total_mem = get_total_mem();
+	ret = parse_crashkernel(boot_command_line, total_mem,
+				&crash_size, &crash_base);
+	if (ret)
+		return;
+
+	ret = memblock_reserve(crash_base, crash_size);
+	if (ret < 0) {
+		pr_warn("crashkernel reservation failed"
+			" - memory is in use (0x%lx)\n",
+			(unsigned long)crash_base);
+		return;
+	}
+
+	pr_info("Reserving %ldMB of memory at %ldMB"
+		" for crashkernel (System RAM: %ldMB)\n",
+		(unsigned long)(crash_size >> 20),
+		(unsigned long)(crash_base >> 20),
+		(unsigned long)(total_mem >> 20));
+
+	crashk_res.start = crash_base;
+	crashk_res.end = crash_base + crash_size - 1;
+	insert_resource(&iomem_resource, &crashk_res);
+}
+#endif /* CONFIG_KEXEC */
+
+#ifdef CONFIG_CRASH_DUMP
+static void __init reserve_elfcorehdr(void)
+{
+	struct resource res;
+	int ret;
+
+	if (!elfcorehdr_size)
+		return;
+
+	ret = memblock_reserve(elfcorehdr_addr, elfcorehdr_size);
+	if (ret < 0) {
+		pr_warn("elfcorehdr reservation failed"
+			" - memory is in use (0x%lx)\n",
+			(unsigned long)elfcorehdr_addr);
+		return;
+	}
+
+	pr_info("Reserving %ldKB of memory at %ldMB for elfcorehdr\n",
+		(unsigned long)(elfcorehdr_size >> 10),
+		(unsigned long)(elfcorehdr_addr >> 20));
+
+	res.name = "Vmore Elf Header";
+	res.start = elfcorehdr_addr;
+	res.end = elfcorehdr_addr + elfcorehdr_size - 1;
+	insert_resource(&iomem_resource, &res);
+}
+#endif /* CONFIG_CRASH_DUMP */
+
 static void __init request_standard_resources(void)
 {
 	struct memblock_region *region;
@@ -387,6 +463,13 @@ void __init setup_arch(char **cmdline_p)
 
 	paging_init();
 	request_standard_resources();
+
+#ifdef CONFIG_KEXEC
+	reserve_crashkernel();
+#endif
+#ifdef CONFIG_CRASH_DUMP
+	reserve_elfcorehdr();
+#endif
 
 	early_ioremap_reset();
 
