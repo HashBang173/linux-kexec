@@ -89,6 +89,7 @@ struct kvm_vcpu * __percpu *kvm_get_running_vcpus(void)
 
 int kvm_arch_hardware_enable(void)
 {
+	// do new setup
 	return 0;
 }
 
@@ -99,6 +100,7 @@ int kvm_arch_vcpu_should_kick(struct kvm_vcpu *vcpu)
 
 int kvm_arch_hardware_setup(void)
 {
+	// do new shutdown
 	return 0;
 }
 
@@ -897,6 +899,12 @@ static void cpu_init_hyp_mode(void *dummy)
 	__cpu_init_hyp_mode(boot_pgd_ptr, pgd_ptr, hyp_stack_ptr, vector_ptr);
 }
 
+static void kvm_cpu_shutdown(int cpu)
+{
+	// TODO.
+	__kvm_cpu_shutdown(cpu, hyp_default_vectors);
+}
+
 static int hyp_init_cpu_notify(struct notifier_block *self,
 			       unsigned long action, void *cpu)
 {
@@ -906,6 +914,8 @@ static int hyp_init_cpu_notify(struct notifier_block *self,
 		if (__hyp_get_vectors() == hyp_default_vectors)
 			cpu_init_hyp_mode(NULL);
 		break;
+	case CPU_DYING_FROZEN:
+		kvm_cpu_shutdown((int)(long)cpu);
 	}
 
 	return NOTIFY_OK;

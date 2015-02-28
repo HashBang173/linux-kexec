@@ -223,6 +223,8 @@ static inline void __cpu_init_hyp_mode(phys_addr_t boot_pgd_ptr,
 		     hyp_stack_ptr, vector_ptr);
 }
 
+void __kvm_cpu_shutdown(int cpu, unsigned long vectors);
+
 struct vgic_sr_vectors {
 	void	*save_vgic;
 	void	*restore_vgic;

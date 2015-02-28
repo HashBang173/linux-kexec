@@ -58,6 +58,14 @@
 
 #define HVC_CALL_FUNC 3
 
+/*
+ * HVC_KVM_CPU_SHUTDOWN - Shutdown KVM on the calling CPU.
+ *
+ * @x0: The logical ID of the CPU.
+ */
+
+#define HVC_KVM_CPU_SHUTDOWN 4
+
 #define BOOT_CPU_MODE_EL1	(0xe11)
 #define BOOT_CPU_MODE_EL2	(0xe12)
 
