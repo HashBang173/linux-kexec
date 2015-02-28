@@ -8,6 +8,8 @@
  * published by the Free Software Foundation.
  */
 
+#define DEBUG 1
+
 #include <linux/irq.h>
 #include <linux/kexec.h>
 #include <linux/of_fdt.h>
@@ -39,6 +41,44 @@ static bool kexec_is_dtb(const void *dtb)
 }
 
 /**
+ * kexec_list_walk - Helper to walk the kimage page list.
+ */
+
+static void kexec_list_walk(void *ctx, unsigned long kimage_head,
+	void (*cb)(void *ctx, unsigned int flag, void *addr, void *dest))
+{
+	void *dest;
+	unsigned long *entry;
+
+	for (entry = &kimage_head, dest = NULL; ; entry++) {
+		unsigned int flag = *entry &
+			(IND_DESTINATION | IND_INDIRECTION | IND_DONE |
+			IND_SOURCE);
+		void *addr = phys_to_virt(*entry & PAGE_MASK);
+
+		switch (flag) {
+		case IND_INDIRECTION:
+			entry = (unsigned long *)addr - 1;
+			cb(ctx, flag, addr, NULL);
+			break;
+		case IND_DESTINATION:
+			dest = addr;
+			cb(ctx, flag, addr, NULL);
+			break;
+		case IND_SOURCE:
+			cb(ctx, flag, addr, dest);
+			dest += PAGE_SIZE;
+			break;
+		case IND_DONE:
+			cb(ctx, flag , NULL, NULL);
+			return;
+		default:
+			break;
+		}
+	}
+}
+
+/**
  * kexec_image_info - For debugging output.
  */
 #define kexec_image_info(_i) _kexec_image_info(__func__, __LINE__, _i)
@@ -67,6 +107,94 @@ static void _kexec_image_info(const char *func, int line,
 			(kexec_is_dtb(image->segment[i].buf) ?
 				", dtb segment" : ""));
 	}
+}
+
+/**
+ * kexec_list_dump - Debugging dump of the kimage page list.
+ */
+
+static void kexec_list_dump_cb(void *ctx, unsigned int flag, void *addr,
+	void *dest)
+{
+	unsigned int verbosity = (unsigned long)ctx;
+	phys_addr_t paddr = virt_to_phys(addr);
+	phys_addr_t pdest = virt_to_phys(dest);
+
+	switch (flag) {
+	case IND_INDIRECTION:
+		pr_devel("  I: %pa (%p)\n", &paddr, addr);
+		break;
+	case IND_DESTINATION:
+		pr_devel("  D: %pa (%p)\n",
+			&paddr, addr);
+		break;
+	case IND_SOURCE:
+		if (verbosity == 2)
+			pr_devel("S");
+		if (verbosity == 3)
+			pr_devel("  S -> %pa (%p)\n", &pdest, dest);
+		if (verbosity == 4)
+			pr_devel("  S: %pa (%p) -> %pa (%p)\n", &paddr, addr,
+				&pdest, dest);
+		break;
+	case IND_DONE:
+		pr_devel("  DONE\n");
+		break;
+	default:
+		pr_devel("  ?: %pa (%p)\n", &paddr, addr);
+		break;
+	}
+}
+
+#define kexec_list_dump(_i, _v) _kexec_list_dump(__func__, __LINE__, _i, _v)
+static void _kexec_list_dump(const char *func, int line,
+	unsigned long kimage_head, unsigned int verbosity)
+{
+#if !defined(DEBUG)
+	return;
+#endif
+
+	pr_devel("%s:%d: kexec_list_dump:\n", func, line);
+
+	kexec_list_walk((void *)(unsigned long)verbosity, kimage_head,
+		kexec_list_dump_cb);
+}
+
+static void dump_cpus(void)
+{
+	unsigned int cpu;
+	char s[1024];
+	char *p;
+
+	p = s + sprintf(s, "%s: all:       ", __func__);
+	for_each_cpu(cpu, cpu_all_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: possible:  ", __func__);
+	for_each_possible_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: present:   ", __func__);
+	for_each_present_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: active:    ", __func__);
+	for_each_cpu(cpu, cpu_active_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: online:    ", __func__);
+	for_each_online_cpu(cpu)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
+
+	p = s + sprintf(s, "%s: not online:", __func__);
+	for_each_cpu_not(cpu, cpu_online_mask)
+		p += sprintf(p, " %d", cpu);
+	pr_devel("%s\n", s);
 }
 
 /**
@@ -185,6 +313,9 @@ void machine_kexec(struct kimage *image)
 		arm64_kexec_kimage_head);
 	pr_devel("%s:%d: kexec_kimage_start:       %lx\n", __func__, __LINE__,
 		arm64_kexec_kimage_start);
+
+	kexec_list_dump(image->head, 1);
+	dump_cpus();
 
 	/*
 	 * Copy relocate_new_kernel to the reboot_code_buffer for use
