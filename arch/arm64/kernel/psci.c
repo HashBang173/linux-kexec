@@ -118,6 +118,8 @@ static void psci_power_state_unpack(u32 power_state,
 static noinline int __invoke_psci_fn_hvc(u64 function_id, u64 arg0, u64 arg1,
 					 u64 arg2)
 {
+	/* Registers x17 and x18 are not preserved over the hvc call. */ 
+
 	asm volatile(
 			__asmeq("%0", "x0")
 			__asmeq("%1", "x1")
@@ -125,7 +127,8 @@ static noinline int __invoke_psci_fn_hvc(u64 function_id, u64 arg0, u64 arg1,
 			__asmeq("%3", "x3")
 			"hvc	#0\n"
 		: "+r" (function_id)
-		: "r" (arg0), "r" (arg1), "r" (arg2));
+		: "r" (arg0), "r" (arg1), "r" (arg2)
+		: "x17", "x18");
 
 	return function_id;
 }
