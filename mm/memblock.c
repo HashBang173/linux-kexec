@@ -679,6 +679,7 @@ int __init_memblock memblock_remove_range(struct memblock_type *type,
 
 int __init_memblock memblock_remove(phys_addr_t base, phys_addr_t size)
 {
+	printk("%s:%d: %016lx, %016lx\n", __func__, __LINE__, (unsigned long)base, (unsigned long)size);
 	return memblock_remove_range(&memblock.memory, base, size);
 }
 
@@ -711,6 +712,8 @@ static int __init_memblock memblock_reserve_region(phys_addr_t base,
 
 int __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
+	printk("%s:%d: %016lx, %016lx\n", __func__, __LINE__, (unsigned long)base, (unsigned long)size);
+
 	return memblock_reserve_region(base, size, MAX_NUMNODES, 0);
 }
 
