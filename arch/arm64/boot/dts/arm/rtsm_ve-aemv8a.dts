@@ -9,8 +9,6 @@
 
 /dts-v1/;
 
-/memreserve/ 0x80000000 0x00010000;
-
 / {
 	model = "RTSM_VE_AEMv8A";
 	compatible = "arm,rtsm_ve,aemv8a", "arm,vexpress";
@@ -65,6 +63,17 @@
 		device_type = "memory";
 		reg = <0x00000000 0x80000000 0 0x80000000>,
 		      <0x00000008 0x80000000 0 0x80000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		firmware-memory@0x80000000 {
+			no-map;
+			reg = <0x0 0x80000000 0x0 0x00010000>;
+		};
 	};
 
 	gic: interrupt-controller@2c001000 {
