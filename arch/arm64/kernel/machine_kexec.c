@@ -8,6 +8,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/irq.h>
 #include <linux/kexec.h>
 #include <linux/of_fdt.h>
 #include <linux/slab.h>
@@ -213,7 +214,37 @@ void machine_kexec(struct kimage *image)
 	soft_restart(reboot_code_buffer_phys);
 }
 
+static void machine_kexec_mask_interrupts(void)
+{
+	unsigned int i;
+	struct irq_desc *desc;
+
+	for_each_irq_desc(i, desc) {
+		struct irq_chip *chip;
+
+		chip = irq_desc_get_chip(desc);
+		if (!chip)
+			continue;
+
+		if (chip->irq_eoi && irqd_irq_inprogress(&desc->irq_data))
+			chip->irq_eoi(&desc->irq_data);
+
+		if (chip->irq_mask)
+			chip->irq_mask(&desc->irq_data);
+
+		if (chip->irq_disable && !irqd_irq_disabled(&desc->irq_data))
+			chip->irq_disable(&desc->irq_data);
+	}
+}
+
 void machine_crash_shutdown(struct pt_regs *regs)
 {
-	/* Empty routine needed to avoid build errors. */
+	local_irq_disable();
+
+	smp_send_stop();
+
+	crash_save_cpu(regs, smp_processor_id());
+	machine_kexec_mask_interrupts();
+
+	pr_info("Loading crashdump kernel...\n");
 }
