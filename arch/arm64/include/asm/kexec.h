@@ -39,7 +39,37 @@
 static inline void crash_setup_regs(struct pt_regs *newregs,
 				    struct pt_regs *oldregs)
 {
-	/* Empty routine needed to avoid build errors. */
+	if (oldregs) {
+		memcpy(newregs, oldregs, sizeof(*newregs));
+	} else {
+		__asm__ __volatile__ (
+			"stp	 x0,   x1, [%3]\n\t"
+			"stp	 x2,   x3, [%3, 0x10]\n\t"
+			"stp	 x4,   x5, [%3, 0x20]\n\t"
+			"stp	 x6,   x7, [%3, 0x30]\n\t"
+			"stp	 x8,   x9, [%3, 0x40]\n\t"
+			"stp	x10,  x11, [%3, 0x50]\n\t"
+			"stp	x12,  x13, [%3, 0x60]\n\t"
+			"stp	x14,  x15, [%3, 0x70]\n\t"
+			"stp	x16,  x17, [%3, 0x80]\n\t"
+			"stp	x18,  x19, [%3, 0x90]\n\t"
+			"stp	x20,  x21, [%3, 0xa0]\n\t"
+			"stp	x22,  x23, [%3, 0xb0]\n\t"
+			"stp	x24,  x25, [%3, 0xc0]\n\t"
+			"stp	x26,  x27, [%3, 0xd0]\n\t"
+			"stp	x28,  x29, [%3, 0xe0]\n\t"
+			"str	x30,	   [%3, 0xf0]\n\t"
+			"mov	%0, sp\n\t"
+			"adr	%1, 1f\n\t"
+			"mrs	%2, spsr_el1\n\t"
+		"1:"
+			: "=r" (newregs->sp),
+			  "=r" (newregs->pc),
+			  "=r" (newregs->pstate)
+			: "r"  (&newregs->regs)
+			: "memory"
+		);
+	}
 }
 
 #endif /* !defined(__ASSEMBLY__) */
