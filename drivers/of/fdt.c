@@ -571,6 +571,10 @@ void __init early_init_fdt_scan_reserved_mem(void)
 		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
 		if (!size)
 			break;
+		pr_err("%s: ERROR: "
+			"/memreserve/ field not compatible with kexec: "
+			"%016lx, %016lx\n", __func__, (unsigned long)base,
+		       (unsigned long)size);
 		early_init_dt_reserve_memory_arch(base, size, 0);
 	}
 
