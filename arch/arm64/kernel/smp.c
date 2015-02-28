@@ -129,6 +129,7 @@ static void smp_store_cpu_info(unsigned int cpuid)
  * This is the secondary CPU boot entry.  We're using this CPUs
  * idle thread stack, but a set of temporary page tables.
  */
+#include <asm/virt.h>
 asmlinkage void secondary_start_kernel(void)
 {
 	struct mm_struct *mm = &init_mm;
@@ -143,6 +144,7 @@ asmlinkage void secondary_start_kernel(void)
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
 
 	set_my_cpu_offset(per_cpu_offset(smp_processor_id()));
+	printk("%s:%d: HYP cpu%u: %c\n", __func__, __LINE__, cpu, (is_hyp_mode_available() ? 'y' : 'n'));
 	printk("CPU%u: Booted secondary processor\n", cpu);
 
 	/*
